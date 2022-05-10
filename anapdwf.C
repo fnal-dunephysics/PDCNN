@@ -7,6 +7,7 @@
 #include "TChain.h"
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -83,14 +84,34 @@ void anapdwf(){
   TH1F *wfor = new TH1F("wfor","original waveform", 2000, 0, 2000);
   TH1F *wfma = new TH1F("wfma","moving average", 2000, 0, 2000);
   TH1F *wfden = new TH1F("wfden","denoised", 2000, 0, 2000);
-  TH1F *wfsum[288];
-  for (int i = 0; i<288; ++i){
+
+  const int nch = 288;
+  const int nwf = 1000;
+  vector<vector<TH1F*>> wfnoise(nch);
+  vector<vector<TH1F*>> wfsignal(nch);
+  for (size_t i = 0; i<wfnoise.size(); ++i){
+    wfnoise[i].resize(nwf);
+    for (size_t j = 0; j<wfnoise[i].size(); ++j){
+      wfnoise[i][j] = new TH1F(Form("wfnoise_%zu_%zu",i,j), Form("wfnoise_%zu_%zu",i,j), 2000, 0, 2000);
+    }
+    wfsignal[i].resize(nwf);
+    for (size_t j = 0; j<wfsignal[i].size(); ++j){
+      wfsignal[i][j] = new TH1F(Form("wfsignal_%zu_%zu",i,j), Form("wfsignal_%zu_%zu",i,j), 2000, 0, 2000);
+    }
+  }
+  
+  TH1F *wfsum[nch];
+  for (int i = 0; i<nch; ++i){
     wfsum[i] = new TH1F(Form("wfsum%d",i),Form("ch %d",i), 1100, -1000, 10000);
   }
-
+  
+  map<int, int> signalcounter;
+  map<int, int> noisecounter;
+  
   TChain* pdtree = new TChain("pdtree");
   std::ifstream in;
   in.open("pd_6849.xroot");
+  //in.open("pd_6852.xroot");
   char line[1024];
   
   while(1){
@@ -128,13 +149,18 @@ void anapdwf(){
     if (i%1000000==0) cout<<i<<"/"<<nentries<<endl;
     //if (i!=3125312) continue;
     pdtree->GetEntry(i);
+    if (daqch!=143) continue;
     //cout<<onda->size()<<endl;
     wfor->Reset();
     wfma->Reset();
     wfden->Reset();
     wfor->SetTitle(Form("Run %d Event %d Ch %d;time tick;ADC",run,event,daqch));
-    waveform.clear(); ondama.clear(); ondaor.clear();
-    ondaden.clear(); input.clear(); output.clear();    
+    fill(waveform.begin(), waveform.end(), 0);
+    fill(ondama.begin(), ondama.end(), 0);
+    fill(ondaor.begin(), ondaor.end(), 0);
+    fill(ondaden.begin(), ondaden.end(), 0);
+    fill(input.begin(), input.end(), 0);
+    fill(output.begin(), output.end(), 0);
     for (size_t j = 0; j<onda->size(); ++j){
       waveform[j] = (*onda)[j];
     }
@@ -229,9 +255,32 @@ void anapdwf(){
       ++igraph;
     }
     wfsum[daqch]->Fill(sum);
+    if (sum > -300 && sum < 300){
+      if (noisecounter[daqch]<nwf){
+        for (size_t j = 0; j<ondaor.size(); ++j){
+          wfnoise[daqch][noisecounter[daqch]]->SetBinContent(j+1, ondaor[j]);
+        }
+        ++noisecounter[daqch];
+      }
+    }
+    else if (sum > 600 && sum < 1000){
+      if (signalcounter[daqch]<nwf){
+        for (size_t j = 0; j<ondaor.size(); ++j){
+          wfsignal[daqch][signalcounter[daqch]]->SetBinContent(j+1, ondaor[j]);
+        }
+        ++signalcounter[daqch];
+      }
+    }
+    if (noisecounter[daqch]==nwf && signalcounter[daqch]==nwf) break;
   }
   can->Print("pdwf.ps]");
   f1.cd();
-  for (int i = 0; i<288; ++i) wfsum[i]->Write();
+  for (int i = 0; i<nch; ++i){
+    wfsum[i]->Write();
+    for (int j = 0; j<nwf; ++j){
+      wfsignal[i][j]->Write();
+      wfnoise[i][j]->Write();
+    }
+  }
   f1.Close();
 }

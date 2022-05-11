@@ -29,6 +29,8 @@
   dem->Add(hfreq_noise);
   filt->Divide(dem);
   TCanvas *c2 = new TCanvas("c2","c2");
+  filt->SetTitle("");
+  filt->GetYaxis()->SetTitle("Signal/(Signal+Noise)");
   filt->Draw();
 
   TF1 *fun = new TF1("fun","[0]*exp(-0.5*pow(x/[1],2))", 0, 10000);

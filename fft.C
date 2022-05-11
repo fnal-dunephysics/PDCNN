@@ -56,7 +56,7 @@ void fft(){
     TH1 *h1_fft = 0;
     h1_fft = htemp->FFT(h1_fft, "MAG");
     for (int j = 0; j<h1_fft->GetNbinsX(); ++j){
-      double frequency = (j+0.5-100)*binwidth;
+      double frequency = (j+0.5)*binwidth;
       double amp = h1_fft->GetBinContent(j+1);
       freq_signal->Fill(frequency, amp);
     }

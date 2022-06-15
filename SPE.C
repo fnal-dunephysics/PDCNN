@@ -22,12 +22,12 @@ void SPE(){
 
   TCanvas *c1 = new TCanvas("c1","c1");
   avgsignal->DrawCopy();
-
+  c1->Print("1pe.pdf");
+  c1->Print("1pe.png");
+  
   for (int i = 0; i<5; ++i){
     cout<<"par["<<i<<"]="<<func->GetParameter(i)<<endl;
   } 
-
-  TCanvas *c2 = new TCanvas("c2","c2");
   
 }
 

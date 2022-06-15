@@ -17,8 +17,8 @@
   freq_noise->Draw("same");
   TLegend *leg1 = new TLegend(0.3,0.6,0.6,0.9);
   leg1->SetFillStyle(0);
-  leg1->AddEntry(freq_sig, "Signal+noise", "p");
-  leg1->AddEntry(freq_noise, "Noise", "p");
+  leg1->AddEntry(freq_sig, "1PE", "p");
+  leg1->AddEntry(freq_noise, "Pedestal", "p");
   leg1->Draw();
   c1->Print("freq.png");
   c1->Print("freq.pdf");
@@ -30,7 +30,7 @@
   filt->Divide(dem);
   TCanvas *c2 = new TCanvas("c2","c2");
   filt->SetTitle("");
-  filt->GetYaxis()->SetTitle("Signal/(Signal+Noise)");
+  filt->GetYaxis()->SetTitle("(1PE-Pedestal)/(1PE+Pedestal)");
   filt->Draw();
 
   TF1 *fun = new TF1("fun","[0]*exp(-0.5*pow(x/[1],2))", 0, 10000);
@@ -38,7 +38,10 @@
   //fun->Draw("same");
   filt->Fit("fun","R","",0.,40);
   cout<<fun->GetParameter(0)<<" "<<fun->GetParameter(1)<<endl;
-
+  c2->Print("filter.pdf");
+  c2->Print("filter.png");
+  
+  
   // Convert filter to time domain
   int ntbin = 2000;
   double samplerate = 6.67; // [ns]
